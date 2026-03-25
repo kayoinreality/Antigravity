@@ -1,0 +1,387 @@
+<!-- ============================================================
+  ANTIGRAVITY — Floating Notes App Section
+  Drop this inside your projects/portfolio section.
+  Customize the GitHub link and any copy as needed.
+  ============================================================ -->
+
+<section class="project-antigravity" id="antigravity">
+
+  <!-- Background blob (optional visual flourish) -->
+  <div class="ag-glow" aria-hidden="true"></div>
+
+  <div class="ag-container">
+
+    <!-- Badge -->
+    <div class="ag-badge">
+      <span class="ag-badge-dot"></span>
+      Mobile App
+    </div>
+
+    <!-- Title + tagline -->
+    <h2 class="ag-title">antigravity</h2>
+    <p class="ag-tagline">
+      An infinite canvas for your thoughts — like Obsidian,<br>
+      but built for the palm of your hand.
+    </p>
+
+    <!-- Feature chips -->
+    <ul class="ag-features" role="list">
+      <li>✦ Infinite pan &amp; zoom canvas</li>
+      <li>⚡ Connect notes with links</li>
+      <li>◈ Persistent MMKV storage</li>
+      <li>◎ iOS &amp; Android optimized</li>
+      <li>⊕ Expo Router · Reanimated 4</li>
+    </ul>
+
+    <!-- Screenshot mockup (replace src with real screenshot) -->
+    <div class="ag-mockup" aria-hidden="true">
+      <div class="ag-phone">
+        <div class="ag-phone-screen">
+          <!-- Simulated canvas preview -->
+          <div class="ag-canvas-preview">
+            <div class="ag-preview-note" style="--hue: 55; --x: 18%; --y: 20%; --r: -6deg;">
+              Ideas for later
+            </div>
+            <div class="ag-preview-note" style="--hue: 200; --x: 55%; --y: 15%; --r: 4deg;">
+              Design system
+            </div>
+            <div class="ag-preview-note" style="--hue: 280; --x: 30%; --y: 52%; --r: -3deg;">
+              Ship it 🚀
+            </div>
+            <div class="ag-preview-note" style="--hue: 160; --x: 62%; --y: 48%; --r: 7deg;">
+              Daily log
+            </div>
+            <!-- Connection line -->
+            <svg class="ag-connector" viewBox="0 0 200 200" fill="none">
+              <line x1="80" y1="60" x2="140" y2="120" stroke="rgba(255,255,255,0.25)" stroke-width="1.5" stroke-dasharray="4 4"/>
+              <line x1="80" y1="60" x2="100" y2="140" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" stroke-dasharray="4 4"/>
+            </svg>
+          </div>
+        </div>
+        <div class="ag-phone-bar"></div>
+      </div>
+    </div>
+
+    <!-- Stack badges -->
+    <div class="ag-stack">
+      <span>Expo</span>
+      <span>React Native</span>
+      <span>Reanimated 4</span>
+      <span>MMKV</span>
+      <span>Zustand</span>
+      <span>Unistyles v3</span>
+    </div>
+
+    <!-- CTA -->
+    <div class="ag-cta">
+      <a
+        href="https://github.com/YOUR_USERNAME/antigravity"
+        class="ag-btn-primary"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+        </svg>
+        View on GitHub
+      </a>
+      <a
+        href="https://expo.dev/go"
+        class="ag-btn-secondary"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Try with Expo Go →
+      </a>
+    </div>
+
+  </div>
+</section>
+
+<style>
+/* ============================================================
+   ANTIGRAVITY SECTION STYLES
+   Uses CSS custom properties — easy to override.
+   ============================================================ */
+
+.project-antigravity {
+  --ag-bg: #0d0d1a;
+  --ag-surface: #13131f;
+  --ag-primary: #6C5CE7;
+  --ag-primary-light: #A29BFE;
+  --ag-text: #ffffff;
+  --ag-text-sub: rgba(255,255,255,0.55);
+  --ag-text-muted: rgba(255,255,255,0.3);
+  --ag-border: rgba(255,255,255,0.08);
+  --ag-radius: 24px;
+
+  position: relative;
+  background: var(--ag-bg);
+  padding: clamp(60px, 8vw, 120px) 24px;
+  overflow: hidden;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Ambient glow */
+.ag-glow {
+  position: absolute;
+  top: -200px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(108,92,231,0.18) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.ag-container {
+  max-width: 760px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0;
+}
+
+/* Badge */
+.ag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 99px;
+  background: rgba(108,92,231,0.15);
+  border: 1px solid rgba(162,155,254,0.3);
+  color: var(--ag-primary-light);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+}
+
+.ag-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ag-primary-light);
+  animation: ag-pulse 2s ease-in-out infinite;
+}
+
+@keyframes ag-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* Title */
+.ag-title {
+  font-size: clamp(42px, 8vw, 72px);
+  font-weight: 800;
+  color: var(--ag-text);
+  letter-spacing: -2.5px;
+  line-height: 1;
+  margin: 0 0 20px;
+  background: linear-gradient(135deg, #fff 0%, var(--ag-primary-light) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.ag-tagline {
+  font-size: clamp(16px, 2.5vw, 20px);
+  color: var(--ag-text-sub);
+  line-height: 1.6;
+  margin: 0 0 36px;
+  font-weight: 400;
+}
+
+/* Feature chips */
+.ag-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 48px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.ag-features li {
+  padding: 8px 16px;
+  background: var(--ag-surface);
+  border: 1px solid var(--ag-border);
+  border-radius: 99px;
+  font-size: 13px;
+  color: var(--ag-text-sub);
+  font-weight: 500;
+  letter-spacing: -0.1px;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.ag-features li:hover {
+  border-color: rgba(162,155,254,0.35);
+  color: var(--ag-text);
+}
+
+/* Phone mockup */
+.ag-mockup {
+  margin-bottom: 48px;
+}
+
+.ag-phone {
+  width: 220px;
+  background: #1c1c2e;
+  border-radius: 40px;
+  padding: 16px;
+  border: 2px solid rgba(255,255,255,0.1);
+  box-shadow:
+    0 40px 80px rgba(0,0,0,0.6),
+    0 0 0 1px rgba(255,255,255,0.05),
+    inset 0 0 0 1px rgba(255,255,255,0.04);
+  position: relative;
+}
+
+.ag-phone-screen {
+  background: #0d0d1a;
+  border-radius: 28px;
+  height: 380px;
+  overflow: hidden;
+  position: relative;
+}
+
+.ag-canvas-preview {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(108,92,231,0.08) 0%, transparent 60%),
+    #0d0d1a;
+}
+
+/* Dot grid on canvas preview */
+.ag-canvas-preview::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+.ag-preview-note {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  transform: rotate(var(--r));
+  background: hsl(var(--hue), 90%, 72%);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #1a1a2e;
+  width: 90px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+  animation: ag-float 4s ease-in-out infinite;
+  animation-delay: calc(var(--hue) * 20ms);
+}
+
+@keyframes ag-float {
+  0%, 100% { transform: rotate(var(--r)) translateY(0px); }
+  50% { transform: rotate(var(--r)) translateY(-4px); }
+}
+
+.ag-connector {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.ag-phone-bar {
+  width: 80px;
+  height: 4px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 2px;
+  margin: 12px auto 0;
+}
+
+/* Tech stack */
+.ag-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 40px;
+}
+
+.ag-stack span {
+  padding: 4px 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--ag-text-muted);
+  font-weight: 500;
+  font-family: 'SFMono-Regular', 'Fira Code', monospace;
+}
+
+/* CTAs */
+.ag-cta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.ag-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  background: var(--ag-primary);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 14px;
+  text-decoration: none;
+  transition: transform 0.15s, background 0.15s, box-shadow 0.15s;
+  box-shadow: 0 4px 20px rgba(108,92,231,0.4);
+  letter-spacing: -0.2px;
+}
+
+.ag-btn-primary:hover {
+  background: #7c6ff7;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(108,92,231,0.5);
+}
+
+.ag-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  padding: 14px 24px;
+  background: transparent;
+  color: var(--ag-text-sub);
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 14px;
+  text-decoration: none;
+  border: 1px solid var(--ag-border);
+  transition: border-color 0.15s, color 0.15s, transform 0.15s;
+  letter-spacing: -0.2px;
+}
+
+.ag-btn-secondary:hover {
+  border-color: rgba(255,255,255,0.2);
+  color: var(--ag-text);
+  transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .ag-phone { width: 180px; }
+  .ag-phone-screen { height: 320px; }
+  .ag-cta { flex-direction: column; align-items: stretch; }
+  .ag-btn-primary, .ag-btn-secondary { justify-content: center; }
+}
+</style>

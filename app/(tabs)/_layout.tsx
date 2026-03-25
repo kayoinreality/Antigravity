@@ -1,41 +1,74 @@
-import { Tabs } from 'expo-router';
-import { Platform } from 'react-native';
-
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { HapticTab } from '@/components/haptic-tab'
+import { Tabs } from 'expo-router'
+import { Platform } from 'react-native'
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: '#A29BFE',
+        tabBarInactiveTintColor: 'rgba(255,255,255,0.35)',
         headerShown: false,
         tabBarButton: HapticTab,
-        tabBarHideOnKeyboard: true,
         tabBarStyle: {
+          backgroundColor: '#13131f',
+          borderTopColor: 'rgba(255,255,255,0.07)',
+          borderTopWidth: 1,
           height: Platform.OS === 'ios' ? 84 : 64,
-          paddingTop: 6,
-          paddingBottom: Platform.OS === 'ios' ? 20 : 8,
+          paddingBottom: Platform.OS === 'ios' ? 28 : 8,
+          paddingTop: 10,
+          elevation: 0,
+          shadowOpacity: 0,
         },
-      }}>
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+          letterSpacing: 0.2,
+          marginTop: 2,
+        },
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Notas',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: 'Canvas',
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon emoji="✦" color={color} focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen
         name="explore"
         options={{
-          title: 'App',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Notes',
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon emoji="≡" color={color} focused={focused} />
+          ),
         }}
       />
     </Tabs>
-  );
+  )
+}
+
+function TabIcon({
+  emoji,
+  color,
+  focused,
+}: {
+  emoji: string
+  color: string
+  focused: boolean
+}) {
+  const { Text } = require('react-native')
+  return (
+    <Text
+      style={{
+        fontSize: focused ? 22 : 18,
+        color,
+        opacity: focused ? 1 : 0.7,
+      }}
+    >
+      {emoji}
+    </Text>
+  )
 }
