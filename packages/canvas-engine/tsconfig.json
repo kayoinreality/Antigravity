@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "types": ["node", "vitest/globals"],
+    "paths": {
+      "@antigravity/core": ["../core/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*"]
+}
