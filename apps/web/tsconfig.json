@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": ["vite/client"],
+    "noEmit": true,
+    "paths": {
+      "@antigravity/core": ["../../packages/core/src/index.ts"],
+      "@antigravity/canvas-engine": ["../../packages/canvas-engine/src/index.ts"],
+      "@antigravity/supabase-client": ["../../packages/supabase-client/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*", "vite.config.ts"]
+}
