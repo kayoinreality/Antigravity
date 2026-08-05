@@ -16,7 +16,8 @@
     "lint": "turbo run lint",
     "dev:web": "npm run dev --workspace @antigravity/web",
     "dev:mobile": "npm run start --workspace @antigravity/mobile",
-    "seed": "tsx scripts/seed-notes.ts"
+    "seed": "tsx scripts/seed-notes.ts",
+    "test:db": "./scripts/test-db.sh"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
