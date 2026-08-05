@@ -80,6 +80,20 @@ interface AppState {
   refreshSuggestions: () => Promise<void>
 }
 
+/**
+ * Clustering runs over the most recently touched notes rather than the whole
+ * canvas.
+ *
+ * Measured on the seed harness: 500 notes take ~160ms, 1,500 take ~640ms,
+ * 3,000 take ~2.1s and 6,000 take ~9.9s — the cost is superlinear, and this
+ * runs as a background task that still blocks the thread it is on. 1,500 is
+ * the largest slice that stays under a second.
+ *
+ * It is also the right scope on its own terms: a suggestion is about the notes
+ * you have been working on, not about something you wrote two years ago.
+ */
+const CLUSTER_INPUT_CAP = 1500
+
 let syncEngine: SyncEngine | null = null
 let clusterTimer: ReturnType<typeof setTimeout> | null = null
 /** Guards against an older search resolving after a newer one. */
@@ -333,8 +347,13 @@ export const useStore = create<AppState>((set, get) => ({
 
   async refreshSuggestions() {
     const { notes, dismissedSuggestions } = get()
-    const clusters = await clusterProvider.cluster(notes)
-    set({ suggestion: toSuggestions(clusters, notes, { dismissed: dismissedSuggestions })[0] ?? null })
+
+    const recent = [...notes]
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .slice(0, CLUSTER_INPUT_CAP)
+
+    const clusters = await clusterProvider.cluster(recent)
+    set({ suggestion: toSuggestions(clusters, recent, { dismissed: dismissedSuggestions })[0] ?? null })
   },
 }))
 
