@@ -1,0 +1,334 @@
+import { buildCorpus, buildVector, centroid, cosine, type Corpus, type SparseVector } from './vector'
+import type { Note } from '../model/types'
+
+/**
+ * Groups notes that are about the same thing, so the canvas can offer to pull
+ * them into a "solar system".
+ *
+ * The algorithm is a thresholded k-NN graph plus connected components, with an
+ * average-linkage split for components that grew too broad. Chosen over k-means
+ * because there is no sensible k for "how many topics does this person have",
+ * and over DBSCAN because this needs to be deterministic — the same canvas must
+ * always produce the same suggestion, or the UI would flicker between runs.
+ */
+
+export interface ClusterOptions {
+  /** Neighbours considered per note. */
+  k?: number
+  /** Cosine similarity below which two notes are unrelated. */
+  threshold?: number
+  /** Suggestions smaller than this are noise. */
+  minSize?: number
+  /** Components larger than this get split by average linkage. */
+  maxSize?: number
+}
+
+export interface Cluster {
+  noteIds: string[]
+  /** 1–2 word name, derived from what makes this group distinct. */
+  label: string
+  /** The terms behind the label, for "why is this grouped?" affordances. */
+  terms: string[]
+  /** Mean intra-cluster similarity, 0–1. Drives whether we bother suggesting. */
+  confidence: number
+  centroidX: number
+  centroidY: number
+}
+
+/**
+ * The threshold is a floor, not the primary separator — that job belongs to the
+ * mutual-k-NN rule in `buildKnnGraph`. Cosine similarity between two short
+ * notes on the same topic lands around 0.1–0.5 (they share two or three
+ * distinctive words out of seven), while unrelated notes sit at exactly 0, so
+ * a high absolute cut-off rejects real groups. The floor only exists to stop a
+ * single incidental shared word from forming an edge.
+ */
+const DEFAULTS = { k: 8, threshold: 0.1, minSize: 3, maxSize: 25 } as const
+
+export function clusterNotes(notes: Note[], options: ClusterOptions = {}): Cluster[] {
+  const k = options.k ?? DEFAULTS.k
+  const threshold = options.threshold ?? DEFAULTS.threshold
+  const minSize = options.minSize ?? DEFAULTS.minSize
+  const maxSize = options.maxSize ?? DEFAULTS.maxSize
+
+  const live = notes.filter((n) => n.deletedAt === null)
+  if (live.length < minSize) return []
+
+  const corpus = buildCorpus(live)
+  const vectors = new Map<string, SparseVector>()
+  const indexed: Note[] = []
+
+  for (const note of live) {
+    const vector = buildVector(note, corpus)
+    // A note with no distinctive terms (empty, or only stopwords) cannot be
+    // assigned to a topic. Leaving it out beats forcing it somewhere.
+    if (vector.size === 0) continue
+    vectors.set(note.id, vector)
+    indexed.push(note)
+  }
+
+  if (indexed.length < minSize) return []
+
+  const adjacency = buildKnnGraph(indexed, vectors, k, threshold)
+  const components = connectedComponents(indexed, adjacency)
+
+  const clusters: Cluster[] = []
+  for (const component of components) {
+    if (component.length < minSize) continue
+
+    const parts = splitComponent(component, vectors, k, threshold, minSize, maxSize)
+
+    for (const part of parts) {
+      if (part.length < minSize) continue
+      clusters.push(describeCluster(part, vectors, corpus))
+    }
+  }
+
+  // Biggest, most coherent groups first — that is the order the UI suggests in.
+  clusters.sort(
+    (a, b) => b.confidence * b.noteIds.length - a.confidence * a.noteIds.length,
+  )
+  return clusters
+}
+
+/**
+ * A term is skipped during candidate generation once it appears in more than
+ * this share of the corpus: it matches nearly everything, so it produces an
+ * enormous candidate list while contributing almost no weight — IDF has already
+ * decided it carries no topical information.
+ *
+ * CANDIDATE_TERM_FLOOR keeps that from misfiring on a small canvas, where 20%
+ * of nine notes is two and the rule would discard exactly the terms that define
+ * a group. Below the floor nothing is skipped at all, so small canvases get the
+ * literal all-pairs result.
+ */
+const CANDIDATE_TERM_CEILING = 0.2
+const CANDIDATE_TERM_FLOOR = 32
+
+/**
+ * Builds a *mutual* k-NN graph: an edge exists only when each note is among the
+ * other's k most similar notes.
+ *
+ * Two decisions here are load-bearing.
+ *
+ * Mutual rather than one-directional, because the one-directional version
+ * chains badly — a hub note vaguely similar to everything links every topic
+ * into one giant component, the classic failure mode of k-NN clustering.
+ * Requiring reciprocity keeps unrelated topics apart without needing a high
+ * similarity threshold that would reject real groups.
+ *
+ * And candidates come from an inverted index rather than from all pairs. Two
+ * notes sharing no terms have a cosine of exactly zero, so skipping those pairs
+ * is not an approximation — it is declining to compute an answer already known.
+ * The one place it does approximate is a pair whose *only* shared term appears
+ * in over a fifth of the canvas, and such a term carries so little weight that
+ * the pair would fall under the threshold anyway.
+ *
+ * Measured on 1,500 notes: the all-pairs version took about seven seconds,
+ * which is a frozen app. This is two orders of magnitude faster.
+ */
+function buildKnnGraph(
+  notes: Note[],
+  vectors: Map<string, SparseVector>,
+  k: number,
+  threshold: number,
+): Map<string, Set<string>> {
+  const adjacency = new Map<string, Set<string>>()
+  const topK = new Map<string, Set<string>>()
+
+  for (const note of notes) {
+    adjacency.set(note.id, new Set())
+    topK.set(note.id, new Set())
+  }
+
+  const postings = new Map<string, string[]>()
+  for (const note of notes) {
+    for (const term of vectors.get(note.id)!.keys()) {
+      const bucket = postings.get(term)
+      if (bucket) bucket.push(note.id)
+      else postings.set(term, [note.id])
+    }
+  }
+
+  const ceiling = Math.max(CANDIDATE_TERM_FLOOR, Math.floor(notes.length * CANDIDATE_TERM_CEILING))
+  const candidates = new Set<string>()
+
+  for (const note of notes) {
+    const vector = vectors.get(note.id)!
+    candidates.clear()
+
+    for (const term of vector.keys()) {
+      const bucket = postings.get(term)
+      if (!bucket || bucket.length > ceiling) continue
+      for (const other of bucket) {
+        if (other !== note.id) candidates.add(other)
+      }
+    }
+
+    const neighbours: Array<{ id: string; score: number }> = []
+    for (const other of candidates) {
+      const score = cosine(vector, vectors.get(other)!)
+      if (score >= threshold) neighbours.push({ id: other, score })
+    }
+
+    // Tie-break by id so the k-th slot is not decided by iteration order.
+    neighbours.sort((x, y) => (y.score !== x.score ? y.score - x.score : x.id < y.id ? -1 : 1))
+    for (const neighbour of neighbours.slice(0, k)) {
+      topK.get(note.id)!.add(neighbour.id)
+    }
+  }
+
+  for (const note of notes) {
+    for (const candidate of topK.get(note.id)!) {
+      if (topK.get(candidate)!.has(note.id)) {
+        adjacency.get(note.id)!.add(candidate)
+        adjacency.get(candidate)!.add(note.id)
+      }
+    }
+  }
+
+  return adjacency
+}
+
+function connectedComponents(
+  notes: Note[],
+  adjacency: Map<string, Set<string>>,
+): Note[][] {
+  const byId = new Map(notes.map((n) => [n.id, n]))
+  const seen = new Set<string>()
+  const components: Note[][] = []
+
+  for (const note of notes) {
+    if (seen.has(note.id)) continue
+
+    const component: Note[] = []
+    const stack = [note.id]
+    seen.add(note.id)
+
+    while (stack.length > 0) {
+      const id = stack.pop()!
+      const current = byId.get(id)
+      if (current) component.push(current)
+      for (const neighbour of adjacency.get(id) ?? []) {
+        if (seen.has(neighbour)) continue
+        seen.add(neighbour)
+        stack.push(neighbour)
+      }
+    }
+
+    components.push(component)
+  }
+
+  return components
+}
+
+/**
+ * Splits a component that came out too broad by re-cutting it at a stricter
+ * threshold, recursively.
+ *
+ * The obvious alternative — agglomerative average-linkage merging from
+ * singletons — is what this replaced, and it was the single slowest thing in
+ * the project: each round rescans every pair of groups and every pair of their
+ * members, so one 700-note component ran for seconds. Re-running the same graph
+ * cut the rest of the algorithm already uses costs a fraction of that and needs
+ * no second notion of similarity.
+ *
+ * A component that will not split is returned whole. That is the honest answer
+ * for a genuinely homogeneous set of notes: `maxSize` is a target, not a
+ * guarantee, and inventing an arbitrary boundary through the middle of one real
+ * topic would be worse than a large system.
+ */
+function splitComponent(
+  component: Note[],
+  vectors: Map<string, SparseVector>,
+  k: number,
+  threshold: number,
+  minSize: number,
+  maxSize: number,
+  depth = 0,
+): Note[][] {
+  // Four escalations take the threshold to about 5x the base, past which
+  // everything shatters into singletons and nothing is learned.
+  if (component.length <= maxSize || depth >= 4) return [component]
+
+  const stricter = threshold * 1.5
+  const parts = connectedComponents(
+    component,
+    buildKnnGraph(component, vectors, Math.max(2, k - depth), stricter),
+  )
+
+  if (parts.length <= 1) return [component]
+
+  // A split that dissolves the group is not a split. Parts below minSize get
+  // discarded by the caller, so a cut that shatters a real topic into fragments
+  // would silently delete the suggestion entirely — worse than one big system.
+  const survivors = parts.reduce(
+    (total, part) => total + (part.length >= minSize ? part.length : 0),
+    0,
+  )
+  if (survivors < component.length * 0.6) return [component]
+
+  return parts.flatMap((part) =>
+    splitComponent(part, vectors, k, stricter, minSize, maxSize, depth + 1),
+  )
+}
+
+function describeCluster(
+  notes: Note[],
+  vectors: Map<string, SparseVector>,
+  corpus: Corpus,
+): Cluster {
+  const memberVectors = notes.map((n) => vectors.get(n.id)!)
+  const center = centroid(memberVectors)
+
+  let similaritySum = 0
+  for (const vector of memberVectors) similaritySum += cosine(vector, center)
+  const confidence = similaritySum / memberVectors.length
+
+  let sumX = 0
+  let sumY = 0
+  for (const note of notes) {
+    sumX += note.x
+    sumY += note.y
+  }
+
+  const terms = labelTerms(notes, vectors, corpus)
+
+  return {
+    noteIds: notes.map((n) => n.id).sort(),
+    label: terms.slice(0, 2).join(' ') || '—',
+    terms,
+    confidence,
+    centroidX: sumX / notes.length,
+    centroidY: sumY / notes.length,
+  }
+}
+
+/**
+ * Names the cluster by what it has that the rest of the canvas does not: a term
+ * present in most of the group but rare overall. Ranking on raw centroid weight
+ * instead would surface whatever is merely frequent.
+ */
+function labelTerms(
+  notes: Note[],
+  vectors: Map<string, SparseVector>,
+  corpus: Corpus,
+): string[] {
+  const inCluster = new Map<string, number>()
+  for (const note of notes) {
+    for (const term of vectors.get(note.id)!.keys()) {
+      inCluster.set(term, (inCluster.get(term) ?? 0) + 1)
+    }
+  }
+
+  const scored: Array<[string, number]> = []
+  for (const [term, count] of inCluster) {
+    const coverage = count / notes.length
+    if (coverage < 0.5) continue
+    const globalShare = (corpus.documentFrequency.get(term) ?? 1) / corpus.documentCount
+    scored.push([term, coverage / globalShare])
+  }
+
+  scored.sort((a, b) => (b[1] !== a[1] ? b[1] - a[1] : a[0] < b[0] ? -1 : 1))
+  return scored.slice(0, 4).map(([term]) => term)
+}
